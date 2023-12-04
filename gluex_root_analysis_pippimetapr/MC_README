@@ -1,0 +1,29 @@
+Currently using MC from Ryan Mitchell
+
+The signal MC is here:
+/lustre19/expphy/volatile/halld/home/remitche/B1PIXS/SIGMC/A2_ETAPRIMEPIM_ETAPIPI_GG.V04
+
+The signal MC was generated using this config file:
+/u/home/remitche/GLUEX/ANALYSIS/B1PIXS/SIGMC/A2_ETAPRIMEPIM_ETAPIPI_GG.V04/MC.config
+which uses genr8 with this file:
+/u/home/remitche/GLUEX/ANALYSIS/B1PIXS/SIGMC/CONFIG/A2_ETAPRIMEPIM_ETAPIPI.V02.input
+
+
+
+
+
+Malte has also generated some MC, see details below
+
+
+Hi Mariana! I generated some gamma p -> etaprime pi- Delta++ -> (pi+ pi- eta) pi- (p pi+) events and also reconstructed them with the same analysis version as used for data based on the Fall2018 analysis launch ver02 . You can find the analysis trees here:
+/w/halld-scshelf2101/malte/MC/genr8_etap_pim/root/trees
+and the thrown trees here:
+/w/halld-scshelf2101/malte/MC/genr8_etap_pim/root/thrown
+We could use these trees to check all the cuts and the combinatorics etc. for your etaprime pi- DSelector, and see if everything works as it should
+
+
+
+
+
+3:37
+all the config files to generate that sample are also there. Most important are probably the MC.config and MC.genr8 files in /w/halld-scshelf2101/malte/MC/genr8_etap_pim , in case you want to know what was used to generate this.

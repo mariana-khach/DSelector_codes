@@ -1,0 +1,18 @@
+void Run_DSelector_pippimetapr__B3_M35(){
+ 
+
+  // gEnv->SetValue("ProofLite.Sandbox", "/volatile/halld/home/Mariana/PROOF/.proof/");
+
+
+   TChain *my_tchain = new TChain("pippimetapr__B3_M35_Tree");
+   //All statistics
+   // my_tchain->Add("/cache/halld/RunPeriod-2017-01/analysis/ver27/tree_pippimetapr__B3_M35/merged/tree_pippimetapr__B3_M35_0*.root");
+   //Small fraction of statistics
+    my_tchain->Add("/cache/halld/RunPeriod-2017-01/analysis/ver27/tree_pippimetapr__B3_M35/merged/tree_pippimetapr__B3_M35_*.root");
+    // my_tchain->Add("/cache/halld/RunPeriod-2017-01/analysis/ver27/tree_pippimetapr__B3_M35/merged/tree_pippimetapr__B3_M35_030*.root");
+   
+  DPROOFLiteManager::Process_Chain(my_tchain, "DSelector_pippimetapr__B3_M35.C+", 8); //my_num_threads = unsigned int
+  
+
+
+}

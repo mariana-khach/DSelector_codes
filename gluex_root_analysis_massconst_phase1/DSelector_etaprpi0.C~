@@ -1,0 +1,941 @@
+#include "DSelector_etaprpi0.h"
+
+void DSelector_etaprpi0::Init(TTree *locTree)
+{
+	// USERS: IN THIS FUNCTION, ONLY MODIFY SECTIONS WITH A "USER" OR "EXAMPLE" LABEL. LEAVE THE REST ALONE.
+
+	// The Init() function is called when the selector needs to initialize a new tree or chain.
+	// Typically here the branch addresses and branch pointers of the tree will be set.
+	// Init() will be called many times when running on PROOF (once per file to be processed).
+
+	//USERS: SET OUTPUT FILE NAME //can be overriden by user in PROOF
+        dOutputFileName = "etaprpi0out.root"; //"" for none// This is the file where the histograms are stored
+	dOutputTreeFileName = ""; //"" for none //The tree stored in this file has the same format as the input tree
+	dFlatTreeFileName = "flat_etaprpi0out.root"; //output flat tree (one combo per tree entry), "" for none
+	dFlatTreeName = "etaprpi0_Tree"; //if blank, default name will be chosen
+	//bool dSaveDefaultFlatBranches;
+	dSaveDefaultFlatBranches = false;
+
+	//Because this function gets called for each TTree in the TChain, we must be careful:
+		//We need to re-initialize the tree interface & branch wrappers, but don't want to recreate histograms
+	bool locInitializedPriorFlag = dInitializedFlag; //save whether have been initialized previously
+	DSelector::Init(locTree); //This must be called to initialize wrappers for each new TTree
+	//gDirectory now points to the output file with name dOutputFileName (if any)
+	if(locInitializedPriorFlag)
+		return; //have already created histograms, etc. below: exit
+
+
+	
+	Get_ComboWrappers();
+	dPreviousRunNumber = 0;
+
+	/*********************************** EXAMPLE USER INITIALIZATION: ANALYSIS ACTIONS **********************************/
+
+	// EXAMPLE: Create deque for histogramming particle masses:
+	// // For histogramming the phi mass in phi -> K+ K-
+	// // Be sure to change this and dAnalyzeCutActions to match reaction
+	//std::deque<Particle_t> MyPhi;
+	//MyPhi.push_back(KPlus); MyPhi.push_back(KMinus);
+
+	//ANALYSIS ACTIONS: //Executed in order if added to dAnalysisActions
+	//false/true below: use measured/kinfit data
+
+	//PID
+	//dAnalysisActions.push_back(new DHistogramAction_ParticleID(dComboWrapper, false));
+	//below: value: +/- N ns, Unknown: All PIDs, SYS_NULL: all timing systems
+	//dAnalysisActions.push_back(new DCutAction_PIDDeltaT(dComboWrapper, false, 0.5, KPlus, SYS_BCAL));
+
+	//MASSES
+	//dAnalysisActions.push_back(new DHistogramAction_InvariantMass(dComboWrapper, false, Lambda, 1000, 1.0, 1.2, "Lambda"));
+	//dAnalysisActions.push_back(new DHistogramAction_MissingMassSquared(dComboWrapper, false, 1000, -0.1, 0.1));
+
+	//KINFIT RESULTS
+	//dAnalysisActions.push_back(new DHistogramAction_KinFitResults(dComboWrapper));
+
+	//CUT MISSING MASS
+	//dAnalysisActions.push_back(new DCutAction_MissingMassSquared(dComboWrapper, false, -0.03, 0.02));
+
+	//CUT ON SHOWER QUALITY
+	//dAnalysisActions.push_back(new DCutAction_ShowerQuality(dComboWrapper, SYS_FCAL, 0.5));
+
+	//BEAM ENERGY
+	//dAnalysisActions.push_back(new DHistogramAction_BeamEnergy(dComboWrapper, false));
+	//dAnalysisActions.push_back(new DCutAction_BeamEnergy(dComboWrapper, false, 8.2, 8.8));  // Coherent peak for runs in the range 30000-59999
+
+	//KINEMATICS
+	//dAnalysisActions.push_back(new DHistogramAction_ParticleComboKinematics(dComboWrapper, false));
+
+	// ANALYZE CUT ACTIONS
+	// // Change MyPhi to match reaction
+	//dAnalyzeCutActions = new DHistogramAction_AnalyzeCutActions( dAnalysisActions, dComboWrapper, false, 0, MyPhi, 1000, 0.9, 2.4, "CutActionEffect" );
+
+	//INITIALIZE ACTIONS
+	//If you create any actions that you want to run manually (i.e. don't add to dAnalysisActions), be sure to initialize them here as well
+	Initialize_Actions();
+	//dAnalyzeCutActions->Initialize(); // manual action, must call Initialize()
+
+	/******************************** EXAMPLE USER INITIALIZATION: STAND-ALONE HISTOGRAMS *******************************/
+
+	//EXAMPLE MANUAL HISTOGRAMS:
+	//dHist_MissingMassSquared = new TH1I("MissingMassSquared", ";Missing Mass Squared (GeV/c^{2})^{2}", 600, -0.06, 0.06);
+	//dHist_BeamEnergy = new TH1I("BeamEnergy", ";Beam Energy (GeV)", 600, 0.0, 12.0);
+
+	dHist_showerquality1=new TH1F("dHist_showerquality1",";FCAL shower quality",100,0,1);
+	dHist_showerquality2=new TH1F("dHist_showerquality2",";FCAL shower quality",100,0,1);
+	dHist_showerquality3=new TH1F("dHist_showerquality3",";FCAL shower quality",100,0,1);
+	dHist_showerquality4=new TH1F("dHist_showerquality4",";FCAL shower quality",100,0,1);
+	dHist_MissingMassSquared = new TH1F("dHist_MissingMassSquared", ";Missing Mass Squared (GeV/c^{2})^{2}", 600, -0.06, 0.06);
+	dHist_EtaPrimeMass=new TH1F("dHist_EtaPrimeMass",";M(#eta')",400,0.8,1.3);
+	dHist_deltatRF=new TH1F("dHist_deltatRF",";#Delta t_{RF}",400,-20,20);
+	dHist_tmand=new TH1F("dHist_tmand",";-t[GeV/c^{2}]",400,0,10);
+	dHist_BeamEnergy = new TH1F("dHist_BeamEnergy", ";Beam Energy (GeV)", 600, 0.0, 12.0);
+	dHist_Chi2=new TH1F("dHist_Chi2",";#chi^{2}/NDF",500,0,1);
+	dHist_Chi2_cut=new TH1F("dHist_Chi2_cut",";#chi^{2}/NDF",500,0,1);
+
+			
+	/************************** EXAMPLE USER INITIALIZATION: CUSTOM OUTPUT BRANCHES - MAIN TREE *************************/
+
+	//EXAMPLE MAIN TREE CUSTOM BRANCHES (OUTPUT ROOT FILE NAME MUST FIRST BE GIVEN!!!! (ABOVE: TOP)):
+	//The type for the branch must be included in the brackets
+	//1st function argument is the name of the branch
+	//2nd function argument is the name of the branch that contains the size of the array (for fundamentals only)
+	/*
+	dTreeInterface->Create_Branch_Fundamental<Int_t>("my_int"); //fundamental = char, int, float, double, etc.
+	dTreeInterface->Create_Branch_FundamentalArray<Int_t>("my_int_array", "my_int");
+	dTreeInterface->Create_Branch_FundamentalArray<Float_t>("my_combo_array", "NumCombos");
+	dTreeInterface->Create_Branch_NoSplitTObject<TLorentzVector>("my_p4");
+	dTreeInterface->Create_Branch_ClonesArray<TLorentzVector>("my_p4_array");
+	*/
+
+	
+	
+
+	/************************** EXAMPLE USER INITIALIZATION: CUSTOM OUTPUT BRANCHES - FLAT TREE *************************/
+
+	//EXAMPLE FLAT TREE CUSTOM BRANCHES (OUTPUT ROOT FILE NAME MUST FIRST BE GIVEN!!!! (ABOVE: TOP)):
+	//The type for the branch must be included in the brackets
+	//1st function argument is the name of the branch
+	//2nd function argument is the name of the branch that contains the size of the array (for fundamentals only)
+	/*
+	dFlatTreeInterface->Create_Branch_Fundamental<Int_t>("flat_my_int"); //fundamental = char, int, float, double, etc.
+	dFlatTreeInterface->Create_Branch_FundamentalArray<Int_t>("flat_my_int_array", "flat_my_int");
+	dFlatTreeInterface->Create_Branch_NoSplitTObject<TLorentzVector>("flat_my_p4");
+	dFlatTreeInterface->Create_Branch_ClonesArray<TLorentzVector>("flat_my_p4_array");
+	*/
+
+	dFlatTreeInterface->Create_Branch_Fundamental<Double_t>("dt");
+	dFlatTreeInterface->Create_Branch_Fundamental<Double_t>("be");
+	dFlatTreeInterface->Create_Branch_Fundamental<Double_t>("mm2m");
+	dFlatTreeInterface->Create_Branch_Fundamental<Double_t>("kinfit_CL");
+
+	dFlatTreeInterface->Create_Branch_Fundamental<Double_t>("mpi013");
+	dFlatTreeInterface->Create_Branch_Fundamental<Double_t>("mpi024");
+	dFlatTreeInterface->Create_Branch_Fundamental<Double_t>("mpi014");
+	dFlatTreeInterface->Create_Branch_Fundamental<Double_t>("mpi023");
+
+	dFlatTreeInterface->Create_Branch_Fundamental<Double_t>("metap");
+	dFlatTreeInterface->Create_Branch_Fundamental<Double_t>("metappi0");
+	dFlatTreeInterface->Create_Branch_Fundamental<Double_t>("mpippimpi0");
+	dFlatTreeInterface->Create_Branch_Fundamental<Double_t>("mpi0p");
+	dFlatTreeInterface->Create_Branch_Fundamental<Double_t>("mpippimpi0eta");
+	dFlatTreeInterface->Create_Branch_Fundamental<Double_t>("pi0_cost_gammapres");
+
+	dFlatTreeInterface->Create_Branch_Fundamental<Double_t>("cost_gj");
+	dFlatTreeInterface->Create_Branch_Fundamental<Double_t>("cost_hx");
+
+	dFlatTreeInterface->Create_Branch_Fundamental<Double_t>("phi_gj");
+	dFlatTreeInterface->Create_Branch_Fundamental<Double_t>("phi_hx");
+
+	dFlatTreeInterface->Create_Branch_Fundamental<Double_t>("cost_com_X");
+	dFlatTreeInterface->Create_Branch_Fundamental<Double_t>("phi_com_X");
+
+	dFlatTreeInterface->Create_Branch_Fundamental<Double_t>("event_num");
+	dFlatTreeInterface->Create_Branch_Fundamental<Double_t>("run_num");
+
+	
+
+	dFlatTreeInterface->Create_Branch_Fundamental<Float_t>("px_pr");
+	dFlatTreeInterface->Create_Branch_Fundamental<Float_t>("px_etapr");
+	dFlatTreeInterface->Create_Branch_Fundamental<Float_t>("px_pi0");
+	dFlatTreeInterface->Create_Branch_Fundamental<Float_t>("py_pr");
+	dFlatTreeInterface->Create_Branch_Fundamental<Float_t>("py_etapr");
+	dFlatTreeInterface->Create_Branch_Fundamental<Float_t>("py_pi0");
+	dFlatTreeInterface->Create_Branch_Fundamental<Float_t>("pz_pr");
+	dFlatTreeInterface->Create_Branch_Fundamental<Float_t>("pz_etapr");
+	dFlatTreeInterface->Create_Branch_Fundamental<Float_t>("pz_pi0");
+	dFlatTreeInterface->Create_Branch_Fundamental<Float_t>("e_pr");
+	dFlatTreeInterface->Create_Branch_Fundamental<Float_t>("e_etapr");
+	dFlatTreeInterface->Create_Branch_Fundamental<Float_t>("e_pi0");
+	dFlatTreeInterface->Create_Branch_Fundamental<Float_t>("px_beam");
+	dFlatTreeInterface->Create_Branch_Fundamental<Float_t>("py_beam");
+	dFlatTreeInterface->Create_Branch_Fundamental<Float_t>("pz_beam");
+	dFlatTreeInterface->Create_Branch_Fundamental<Float_t>("e_beam");
+	dFlatTreeInterface->Create_Branch_Fundamental<Int_t>("pol"); 
+
+
+
+
+	/************************************* ADVANCED EXAMPLE: CHOOSE BRANCHES TO READ ************************************/
+
+	//TO SAVE PROCESSING TIME
+		//If you know you don't need all of the branches/data, but just a subset of it, you can speed things up
+		//By default, for each event, the data is retrieved for all branches
+		//If you know you only need data for some branches, you can skip grabbing data from the branches you don't need
+		//Do this by doing something similar to the commented code below
+
+	//dTreeInterface->Clear_GetEntryBranches(); //now get none
+	//dTreeInterface->Register_GetEntryBranch("Proton__P4"); //manually set the branches you want
+
+	/************************************** DETERMINE IF ANALYZING SIMULATED DATA *************************************/
+ 
+	//dIsMC = (dTreeInterface->Get_Branch("MCWeight") != NULL);
+
+}
+
+Bool_t DSelector_etaprpi0::Process(Long64_t locEntry)
+{
+	// The Process() function is called for each entry in the tree. The entry argument
+	// specifies which entry in the currently loaded tree is to be processed.
+	//
+	// This function should contain the "body" of the analysis. It can contain
+	// simple or elaborate selection criteria, run algorithms on the data
+	// of the event and typically fill histograms.
+	//
+	// The processing can be stopped by calling Abort().
+	// Use fStatus to set the return value of TTree::Process().
+	// The return value is currently not used.
+
+	//CALL THIS FIRST
+	DSelector::Process(locEntry); //Gets the data from the tree for the entry
+	//if(Get_EventNumber()%100000==0) {cout << "RUN " << Get_RunNumber() << ", EVENT " << Get_EventNumber() << endl;}
+	//cout << "RUN " << Get_RunNumber() << ", EVENT " << Get_EventNumber() << endl;
+	//TLorentzVector locProductionX4 = Get_X4_Production();
+
+	/******************************************** GET POLARIZATION ORIENTATION ******************************************/
+
+	//Only if the run number changes
+	//RCDB environment must be setup in order for this to work! (Will return false otherwise)
+	UInt_t locRunNumber = Get_RunNumber();
+	if(locRunNumber != dPreviousRunNumber)
+	{
+		dIsPolarizedFlag = dAnalysisUtilities.Get_IsPolarizedBeam(locRunNumber, dIsPARAFlag);
+		dAnalysisUtilities.Get_PolarizationAngle(locRunNumber,  dPolarizationAngle); 
+		dPreviousRunNumber = locRunNumber;
+	}
+
+	/********************************************* SETUP UNIQUENESS TRACKING ********************************************/
+
+	//ANALYSIS ACTIONS: Reset uniqueness tracking for each action
+	//For any actions that you are executing manually, be sure to call Reset_NewEvent() on them here
+	//Reset_Actions_NewEvent();
+	//dAnalyzeCutActions->Reset_NewEvent(); // manual action, must call Reset_NewEvent()
+
+	//PREVENT-DOUBLE COUNTING WHEN HISTOGRAMMING
+		//Sometimes, some content is the exact same between one combo and the next
+			//e.g. maybe two combos have different beam particles, but the same data for the final-state
+		//When histogramming, you don't want to double-count when this happens: artificially inflates your signal (or background)
+		//So, for each quantity you histogram, keep track of what particles you used (for a given combo)
+		//Then for each combo, just compare to what you used before, and make sure it's unique
+
+	//EXAMPLE 1: Particle-specific info:
+	set<Int_t> locUsedSoFar_BeamEnergy; //Int_t: Unique ID for beam particles. set: easy to use, fast to search
+
+	//EXAMPLE 2: Combo-specific info:
+		//In general: Could have multiple particles with the same PID: Use a set of Int_t's
+		//In general: Multiple PIDs, so multiple sets: Contain within a map
+		//Multiple combos: Contain maps within a set (easier, faster to search)
+	set<map<Particle_t, set<Int_t> > > locUsedSoFar_MissingMass;
+
+
+	//Bool_t bggen_MC = false;
+
+	
+	/************************************************* PARSE THROWN TOPOLOGY ***************************************/
+	
+
+	//TString locThrownTopology = Get_ThrownTopologyString();
+
+	//INSERT USER ANALYSIS UNIQUENESS TRACKING HERE
+
+	/**************************************** EXAMPLE: FILL CUSTOM OUTPUT BRANCHES **************************************/
+
+	/*
+	Int_t locMyInt = 7;
+	dTreeInterface->Fill_Fundamental<Int_t>("my_int", locMyInt);
+
+	TLorentzVector locMyP4(4.0, 3.0, 2.0, 1.0);
+	dTreeInterface->Fill_TObject<TLorentzVector>("my_p4", locMyP4);
+
+	for(int loc_i = 0; loc_i < locMyInt; ++loc_i)
+		dTreeInterface->Fill_Fundamental<Int_t>("my_int_array", 3*loc_i, loc_i); //2nd argument = value, 3rd = array index
+	*/
+
+	/************************************************* LOOP OVER COMBOS *************************************************/
+
+	//Loop over combos
+	for(UInt_t loc_i = 0; loc_i < Get_NumCombos(); ++loc_i)
+	{
+
+
+
+		//constants used within the loop
+		Double_t pi = 3.14159;
+
+
+		//Set branch array indices for combo and all combo particles
+		dComboWrapper->Set_ComboIndex(loc_i);
+
+		// Is used to indicate when combos have been cut
+		if(dComboWrapper->Get_IsComboCut()) // Is false when tree originally created
+			continue; // Combo has been cut previously
+
+
+		double dMinKinFitCL = 1e-03; //throw out bad results within 0.01 percent of resolution
+		double locKinFitConLev = dComboWrapper->Get_ConfidenceLevel_KinFit();
+		//cout<<"Before kinfit cut "<<endl;
+		dHist_Chi2->Fill(locKinFitConLev);
+		if(locKinFitConLev < dMinKinFitCL){
+			
+		  dComboWrapper->Set_IsComboCut(true);
+		  continue;
+		  }
+		//cout<<"Right after kinfit cut "<<endl;
+		/********************************************** GET PARTICLE INDICES *********************************************/
+
+		//Used for tracking uniqueness when filling histograms, and for determining unused particles
+
+		//Step 0
+		
+		Int_t locBeamID = dComboBeamWrapper->Get_BeamID();
+		Int_t locProtonTrackID = dProtonWrapper->Get_TrackID();
+
+		//Step 1
+		Int_t locPhoton1NeutralID = dPhoton1Wrapper->Get_NeutralID();
+		Int_t locPhoton2NeutralID = dPhoton2Wrapper->Get_NeutralID();
+
+		//Step 2
+		Int_t locPiMinusTrackID = dPiMinusWrapper->Get_TrackID();
+		Int_t locPiPlusTrackID = dPiPlusWrapper->Get_TrackID();
+
+		//Step 3
+		Int_t locPhoton3NeutralID = dPhoton3Wrapper->Get_NeutralID();
+		Int_t locPhoton4NeutralID = dPhoton4Wrapper->Get_NeutralID();
+		//	cout<<"After get particle indeces "<<endl;
+		/*********************************************** GET FOUR-MOMENTUM **********************************************/
+
+		// Get P4's: //is kinfit if kinfit performed, else is measured
+		//dTargetP4 is target p4
+		//Step 0
+		TLorentzVector locBeamP4 = dComboBeamWrapper->Get_P4();
+		
+		TLorentzVector locProtonP4 = dProtonWrapper->Get_P4();
+		//Step 1
+		TLorentzVector locDecayingPi0P4 = dDecayingPi0Wrapper->Get_P4();
+		TLorentzVector locPhoton1P4 = dPhoton1Wrapper->Get_P4();
+		TLorentzVector locPhoton2P4 = dPhoton2Wrapper->Get_P4();
+		//Step 2
+		TLorentzVector locPiMinusP4 = dPiMinusWrapper->Get_P4();
+		TLorentzVector locPiPlusP4 = dPiPlusWrapper->Get_P4();
+		//Step 3
+		TLorentzVector locDecayingEtaP4 = dDecayingEtaWrapper->Get_P4();
+		TLorentzVector locPhoton3P4 = dPhoton3Wrapper->Get_P4();
+		TLorentzVector locPhoton4P4 = dPhoton4Wrapper->Get_P4();
+
+		// Get Measured P4's:
+		//Step 0
+		TLorentzVector locBeamP4_Measured = dComboBeamWrapper->Get_P4_Measured();
+		TLorentzVector locProtonP4_Measured = dProtonWrapper->Get_P4_Measured();
+		//Step 1
+		TLorentzVector locPhoton1P4_Measured = dPhoton1Wrapper->Get_P4_Measured();
+		TLorentzVector locPhoton2P4_Measured = dPhoton2Wrapper->Get_P4_Measured();
+		//Step 2
+		TLorentzVector locPiMinusP4_Measured = dPiMinusWrapper->Get_P4_Measured();
+		TLorentzVector locPiPlusP4_Measured = dPiPlusWrapper->Get_P4_Measured();
+		//Step 3
+		TLorentzVector locPhoton3P4_Measured = dPhoton3Wrapper->Get_P4_Measured();
+		TLorentzVector locPhoton4P4_Measured = dPhoton4Wrapper->Get_P4_Measured();
+		//cout<<"After get p4 "<<endl;
+		/********************************************* GET COMBO RF TIMING INFO *****************************************/
+
+		TLorentzVector locBeamX4_Measured = dComboBeamWrapper->Get_X4_Measured();
+		//Double_t locBunchPeriod = dAnalysisUtilities.Get_BeamBunchPeriod(Get_RunNumber());
+		Double_t locDeltaT_RF = dAnalysisUtilities.Get_DeltaT_RF(Get_RunNumber(), locBeamX4_Measured, dComboWrapper);
+
+		// calculate accidental subtraction weight based on time difference 
+		double locWeight = 0.; // weight to accidentally subtracted histgorams
+		bool locAccid = false; // flag to fill separate prompt and accidental histograms for later subtraction
+//cout<<"After get RF info "<<endl;
+		if(fabs(locDeltaT_RF) < 0.5*4.008) { // prompt signal recieves a weight of 1
+		  locWeight = 1.;
+		  locAccid = false;
+		}
+                else { // accidentals recieve a weight of 1/# RF bunches included in TTree (8 in this case)
+		  locWeight = -1./8.;
+		  locAccid = true;
+
+		  }
+
+
+
+		//	cout<<"After calc accid weight "<<endl;
+		//Double_t locBunchPeriod = dAnalysisUtilities.Get_BeamBunchPeriod(Get_RunNumber());
+		// Double_t locDeltaT_RF = dAnalysisUtilities.Get_DeltaT_RF(Get_RunNumber(), locBeamX4_Measured, dComboWrapper);
+		// Int_t locRelBeamBucket = dAnalysisUtilities.Get_RelativeBeamBucket(Get_RunNumber(), locBeamX4_Measured, dComboWrapper); // 0 for in-time events, non-zero integer for out-of-time photons
+		// Int_t locNumOutOfTimeBunchesInTree = 4; //YOU need to specify this number
+			//Number of out-of-time beam bunches in tree (on a single side, so that total number out-of-time bunches accepted is 2 times this number for left + right bunches) 
+
+		// Bool_t locSkipNearestOutOfTimeBunch = true; // True: skip events from nearest out-of-time bunch on either side (recommended).
+		// Int_t locNumOutOfTimeBunchesToUse = locSkipNearestOutOfTimeBunch ? locNumOutOfTimeBunchesInTree-1:locNumOutOfTimeBunchesInTree; 
+		// Double_t locAccidentalScalingFactor = dAnalysisUtilities.Get_AccidentalScalingFactor(Get_RunNumber(), locBeamP4.E(), dIsMC); // Ideal value would be 1, but deviations require added factor, which is different for data and MC.
+		// Double_t locAccidentalScalingFactorError = dAnalysisUtilities.Get_AccidentalScalingFactorError(Get_RunNumber(), locBeamP4.E()); // Ideal value would be 1, but deviations observed, need added factor.
+		// Double_t locHistAccidWeightFactor = locRelBeamBucket==0 ? 1 : -locAccidentalScalingFactor/(2*locNumOutOfTimeBunchesToUse) ; // Weight by 1 for in-time events, ScalingFactor*(1/NBunches) for out-of-time
+		// if(locSkipNearestOutOfTimeBunch && abs(locRelBeamBucket)==1) { // Skip nearest out-of-time bunch: tails of in-time distribution also leak in
+		// 	dComboWrapper->Set_IsComboCut(true); 
+		// 	continue; 
+		// } 
+
+		/********************************************* COMBINE FOUR-MOMENTUM ********************************************/
+
+		// DO YOUR STUFF HERE
+
+		// Combine 4-vectors
+		//TLorentzVector locMissingP4_Measured = locBeamP4_Measured + dTargetP4;
+		//locMissingP4_Measured -= locProtonP4_Measured + locPhoton1P4_Measured + locPhoton2P4_Measured + locPiMinusP4_Measured + locPiPlusP4_Measured + locPhoton3P4_Measured + locPhoton4P4_Measured;
+
+		TLorentzVector totalP4_Measured =  locBeamP4_Measured + dTargetP4;		
+		TLorentzVector locMissingP4_Measured = totalP4_Measured - 
+		 (locPiPlusP4_Measured + locPiMinusP4_Measured + locProtonP4_Measured
+		  + locPhoton1P4_Measured + locPhoton2P4_Measured + locPhoton3P4_Measured + locPhoton4P4_Measured);
+
+		TLorentzVector totalP4 =  locBeamP4 + dTargetP4;		
+		TLorentzVector locMissingP4 = totalP4 - 
+		 (locPiPlusP4 + locPiMinusP4 + locProtonP4
+		  + locPhoton1P4 + locPhoton2P4 + locPhoton3P4 + locPhoton4P4);
+
+
+
+		TLorentzVector locPhoton12P4 = locPhoton1P4 + locPhoton2P4;
+		TLorentzVector locpi0P4 = locPhoton1P4 + locPhoton2P4;
+		TLorentzVector locPhoton34P4 = locPhoton3P4 + locPhoton4P4;
+		TLorentzVector locetaP4 = locPhoton3P4 + locPhoton4P4;
+
+		TLorentzVector locpetaP4 = locProtonP4 + locPhoton3P4 + locPhoton4P4;
+
+		TLorentzVector locPhoton12P4m = locPhoton1P4_Measured + locPhoton2P4_Measured;
+		TLorentzVector locPhoton34P4m = locPhoton3P4_Measured + locPhoton4P4_Measured;
+
+		TLorentzVector locpippimP4 = locPiPlusP4 + locPiMinusP4;
+		TLorentzVector locetaprimeP4 = locPiPlusP4 + locPiMinusP4	+ locPhoton3P4 + locPhoton4P4;
+		TLorentzVector locetaprimeP4m = locPiPlusP4_Measured + locPiMinusP4_Measured	+ locPhoton3P4_Measured + locPhoton4P4_Measured;
+
+		TLorentzVector locetaprimepi0P4 = locPiPlusP4 + locPiMinusP4	+ locPhoton3P4 + locPhoton4P4 + locPhoton1P4 + locPhoton2P4;
+		TLorentzVector locetaprimepi0P4m = locPiPlusP4_Measured + locPiMinusP4_Measured + 
+									locPhoton3P4_Measured + locPhoton4P4_Measured + locPhoton1P4_Measured + locPhoton2P4_Measured;
+
+
+		TLorentzVector locPhoton13P4 = locPhoton1P4 + locPhoton3P4;
+		TLorentzVector locPhoton14P4 = locPhoton1P4 + locPhoton4P4;
+		TLorentzVector locPhoton23P4 = locPhoton2P4 + locPhoton3P4;
+		TLorentzVector locPhoton24P4 = locPhoton2P4 + locPhoton4P4;
+
+		TLorentzVector locPhoton13P4m = locPhoton1P4_Measured + locPhoton3P4_Measured;
+		TLorentzVector locPhoton14P4m = locPhoton1P4_Measured + locPhoton4P4_Measured;
+		TLorentzVector locPhoton23P4m = locPhoton2P4_Measured + locPhoton3P4_Measured;
+		TLorentzVector locPhoton24P4m = locPhoton2P4_Measured + locPhoton4P4_Measured;
+
+		TLorentzVector locpippimpi0P4 = locPiPlusP4 + locPiMinusP4 + locPhoton1P4 + locPhoton2P4;
+		TLorentzVector locpippimpi0P4m = locPiPlusP4_Measured + locPiMinusP4_Measured + locPhoton1P4_Measured + locPhoton2P4_Measured;
+
+
+		TLorentzVector locpi0pP4 = locProtonP4 + locPhoton1P4 + locPhoton2P4;
+
+		TLorentzVector locpi0p13P4 = locProtonP4 + locPhoton1P4 + locPhoton3P4;
+		TLorentzVector locpi0p24P4 = locProtonP4 + locPhoton2P4 + locPhoton4P4;
+
+		TLorentzVector locpi0p14P4 = locProtonP4 + locPhoton1P4 + locPhoton4P4;
+		TLorentzVector locpi0p23P4 = locProtonP4 + locPhoton2P4 + locPhoton3P4;
+
+		TLorentzVector locpi0pippimeta =  locpi0P4+locPiPlusP4 + locPiMinusP4+locetaP4;
+		
+		TLorentzVector locpi0pP4m = locProtonP4_Measured + locPhoton1P4_Measured + locPhoton2P4_Measured;
+
+		TLorentzVector loct = locBeamP4 - locetaprimepi0P4;
+		TLorentzVector loctm = locBeamP4_Measured - locetaprimepi0P4m;
+
+		TLorentzVector locs = locBeamP4 + dTargetP4;
+		TLorentzVector locu = locBeamP4 - locProtonP4;
+
+		//Zachs mass diff cuts
+		TLorentzVector locpi0etaP4 = locPhoton12P4 + locPhoton34P4;
+		
+
+		//costheta in GJ frame 
+		//redefine centre of mass 4-vectors to 4-vectors in rest frame of etaprimepi0 system
+   		TLorentzVector BeamP4_GJ = locBeamP4;
+   		TLorentzVector EtaPrimeP4_GJ = locetaprimeP4;
+   		TLorentzVector Pi0P4_GJ = locpi0P4;
+   		TLorentzVector EtaPrimePi0P4_GJ = locetaprimepi0P4;
+		TLorentzVector ProtonP4_GJ = locProtonP4;
+
+		TVector3 boostGJ;
+
+  		TVector3 z_GJ;
+   		TVector3 z_hat_GJ, z_hat_HX;
+
+   		TVector3 y_GJ;
+   		TVector3 y_hat_GJ;
+
+   		TVector3 x_GJ;
+   		TVector3 x_hat_GJ;
+
+   		TVector3 vetaprime_GJ;
+
+
+		// boost to GJ Frame
+   		boostGJ = -(locetaprimepi0P4.Vect())*(1.0/locetaprimepi0P4.E()); //calculate beta for etaprimepi0 system
+
+		//boost in rest frame of etaprimepi0 system
+  		BeamP4_GJ.Boost(boostGJ);
+   		EtaPrimeP4_GJ.Boost(boostGJ);
+   		Pi0P4_GJ.Boost(boostGJ);
+		EtaPrimePi0P4_GJ.Boost(boostGJ);
+		ProtonP4_GJ.Boost(boostGJ); 
+
+		z_GJ.SetXYZ(BeamP4_GJ.X(), BeamP4_GJ.Y(), BeamP4_GJ.Z());//z GJ
+		z_hat_GJ = z_GJ.Unit();  //beam direction (z-direction)
+		
+		
+		//y_GJ = locBeamP4.Vect().Cross(locetaprimepi0P4.Vect());  //y-direction for rest frame of etaprimepi0 system
+		y_GJ = locBeamP4.Vect().Cross(-1* locProtonP4.Vect());    
+   		y_hat_GJ = y_GJ.Unit();    
+
+		x_hat_GJ = y_hat_GJ.Cross(z_hat_GJ);//x hat GJ 
+
+		vetaprime_GJ.SetXYZ(EtaPrimeP4_GJ.Vect()*x_hat_GJ, EtaPrimeP4_GJ.Vect()*y_hat_GJ, EtaPrimeP4_GJ.Vect()*z_hat_GJ);
+
+		
+
+
+		//for test
+
+		TLorentzVector resonance = locetaprimepi0P4;
+		TLorentzVector beam = locBeamP4;
+		TLorentzVector recoil = locProtonP4;
+		TLorentzRotation resRestBoost( -resonance.BoostVector() );
+
+	 	TLorentzVector beam_res   = resRestBoost * beam;
+	 	TLorentzVector recoil_res = resRestBoost * recoil;
+	 	TLorentzVector EtaprimeP4_res = resRestBoost * locetaprimeP4;
+
+		 TLorentzVector Etaprimepi0P4_res = resRestBoost * resonance;
+
+	 	// Helicity frame                                                                                                                                                
+	 	TVector3 z = -1. * recoil_res.Vect().Unit();
+	 	// or GJ frame?                                                                                                                                                  
+	 	// TVector3 z = beam_res.Vect().Unit();                                                                                                                          
+
+	 	// normal to the production plane                                                                                                                                
+	 	TVector3 y = (beam.Vect().Unit().Cross(-recoil.Vect().Unit())).Unit();
+	 	TVector3 x = y.Cross(z);
+		TVector3 vetaprime_HX( (EtaprimeP4_res.Vect()).Dot(x),
+			  (EtaprimeP4_res.Vect()).Dot(y),
+			  (EtaprimeP4_res.Vect()).Dot(z) );
+
+		// double cosTheta_hx = Vetaprime_HX.CosTheta();
+
+
+		
+
+
+
+
+		// costheta of resonace in CM frame
+		// get cm vector
+		TLorentzVector p4_total;
+		p4_total = locBeamP4 + dTargetP4;
+
+		TLorentzVector p4_COM_etap = locetaprimeP4;
+		TLorentzVector p4_COM_X = locetaprimepi0P4;
+		TLorentzVector p4_COM_pi0 = locpi0P4;
+		
+		p4_COM_etap.Boost(-1.*p4_total.BoostVector());
+		p4_COM_pi0.Boost(-1.*p4_total.BoostVector());
+		p4_COM_X.Boost(-1.*p4_total.BoostVector());
+		
+		//Double_t etap_cosTheta = p4_COM_etap.CosTheta();
+		//Double_t X_cosTheta = p4_COM_X.CosTheta();
+		//Double_t X_phi = p4_COM_X.Phi();
+
+		
+		
+
+		
+		//Double_t  pi0_cosTheta = p4_COM_pi0.CosTheta();
+		//Double_t  pi0_Theta = p4_COM_pi0.Theta() * (180/pi);
+
+
+		//TLorentzVector p4_COM_p = locProtonP4;
+		//p4_COM_p.Boost(-1.*p4_total.BoostVector());
+		//Double_t  p_Theta = p4_COM_p.Theta() * (180/pi);
+
+		// define etaprimepi0 4vector  in cm frame
+		//TLorentzVector locetaprimepi0P4_cm = locetaprimepi0P4;
+
+		// get the beta through boostvector and boost in cm frame
+		//locetaprimepi0P4_cm.Boost(-cm_vec.BoostVector());
+
+		//get the costhetaXcm
+		//costheta_X_cm = locetaprimepi0P4_cm.CosTheta();
+
+
+		//add more variables
+
+		TVector3 locpi0P4v3 = locPhoton12P4.Vect();
+		TVector3 locetaP4v3 = locPhoton34P4.Vect();
+		TVector3 locprv3 = locProtonP4.Vect();
+
+		//com frame
+
+		//TLorentzVector resonance = locBeamP4 + Pi0P4MC;
+
+		TLorentzVector locPhoton12P4_Measured = locPhoton1P4_Measured + locPhoton2P4_Measured;
+		TLorentzVector locPhoton34P4_Measured = locPhoton3P4_Measured + locPhoton4P4_Measured;
+		TLorentzVector locPhoton13P4_Measured = locPhoton1P4_Measured + locPhoton3P4_Measured;
+		TLorentzVector locPhoton24P4_Measured = locPhoton2P4_Measured + locPhoton4P4_Measured;
+		
+		TLorentzVector locpippim13P4 = locPiPlusP4 + locPiMinusP4 + locPhoton1P4 + locPhoton3P4;
+		TLorentzVector locpippim24P4 = locPiPlusP4 + locPiMinusP4 + locPhoton2P4 + locPhoton4P4;
+		TLorentzVector locpippim14P4 = locPiPlusP4 + locPiMinusP4 + locPhoton1P4 + locPhoton4P4;
+		TLorentzVector locpippim23P4 = locPiPlusP4 + locPiMinusP4 + locPhoton2P4 + locPhoton3P4;
+		TLorentzVector locpippim34P4 = locPiPlusP4 + locPiMinusP4 + locPhoton3P4 + locPhoton4P4;
+		
+
+
+		/******************************************** EXECUTE ANALYSIS ACTIONS *******************************************/
+
+		// Loop through the analysis actions, executing them in order for the active particle combo
+		//dAnalyzeCutActions->Perform_Action(); // Must be executed before Execute_Actions()
+		//if(!Execute_Actions()) //if the active combo fails a cut, IsComboCutFlag automatically set
+		//	continue;
+
+		//if you manually execute any actions, and it fails a cut, be sure to call:
+			//dComboWrapper->Set_IsComboCut(true);
+
+		/**************************************** EXAMPLE: FILL CUSTOM OUTPUT BRANCHES **************************************/
+
+		/*
+		TLorentzVector locMyComboP4(8.0, 7.0, 6.0, 5.0);
+		//for arrays below: 2nd argument is value, 3rd is array index
+		//NOTE: By filling here, AFTER the cuts above, some indices won't be updated (and will be whatever they were from the last event)
+			//So, when you draw the branch, be sure to cut on "IsComboCut" to avoid these.
+		dTreeInterface->Fill_Fundamental<Float_t>("my_combo_array", -2*loc_i, loc_i);
+		dTreeInterface->Fill_TObject<TLorentzVector>("my_p4_array", locMyComboP4, loc_i);
+		*/
+
+		/**************************************** EXAMPLE: HISTOGRAM BEAM ENERGY *****************************************/
+
+		//Histogram beam energy (if haven't already)
+		//if(locUsedSoFar_BeamEnergy.find(locBeamID) == locUsedSoFar_BeamEnergy.end())
+		//{
+			//dHist_BeamEnergy->Fill(locBeamP4.E()); // Fills in-time and out-of-time beam photon combos
+			//dHist_BeamEnergy->Fill(locBeamP4.E(),locHistAccidWeightFactor); // Alternate version with accidental subtraction
+
+			//locUsedSoFar_BeamEnergy.insert(locBeamID);
+		//}
+
+		/************************************ EXAMPLE: HISTOGRAM MISSING MASS SQUARED ************************************/
+		
+
+
+		 Double_t chisq = dComboWrapper->Get_ChiSq_KinFit();  //cout <<  chisq << "chisq" << endl;
+		 Double_t ndf = dComboWrapper->Get_NDF_KinFit();     //cout <<  ndf << "ndf" << endl;
+		 Double_t chisq_ndf = chisq/ndf;                     //cout << chisq_ndf << "chisq/ndf" << endl;
+		 //Double_t locKinFitConLev = dComboWrapper->Get_ConfidenceLevel_KinFit();
+		 //Double_t kinfit_CL = locKinFitConLev;
+
+		/*
+		Int_t topology_loc = 100; //initialise topology_loc
+		 if (bggen_MC) {	
+		if(locThrownTopology.Contains("4#gamma#pi^{#plus}#pi^{#minus}p[#pi^{0},#eta,#eta']")) topology_loc = 1;
+		 else if  (locThrownTopology.Contains("4#gamma#pi^{#plus}#pi^{#minus}p[#pi^{0},#eta,#omega]"))  topology_loc = 2;
+		 else if (locThrownTopology.Contains("4#gamma#pi^{#plus}#pi^{#minus}p[2#pi^{0},#omega]")) topology_loc = 3;
+		 else if (locThrownTopology.Contains("4#gamma#pi^{#plus}#pi^{#minus}p[#pi^{0},#eta")) topology_loc = 4;
+		 else if (locThrownTopology.Contains("4#gamma#pi^{#plus}#pi^{#minus}p[2#pi^{0},#eta]")) topology_loc = 5;
+		 else if (locThrownTopology.Contains("4#gamma#pi^{#plus}#pi^{#minus}p[2#pi^{0}]")) topology_loc = 6;
+		 else topology_loc = 0;}
+			*/
+		//zachs mass difference cuts
+
+		Double_t del_pi = locetaprimepi0P4.M() - locetaprimeP4.M() - locPhoton12P4.M();
+		Double_t del_eta = locetaprimepi0P4.M() - locpippimpi0P4.M() - locPhoton34P4.M();
+		Double_t del_pi0eta = locpi0etaP4.M() - locPhoton12P4.M() - locPhoton34P4.M();
+
+		//shower quality
+
+		
+		Double_t photon1_sq = dPhoton1Wrapper->Get_Shower_Quality();
+		Double_t photon2_sq = dPhoton2Wrapper->Get_Shower_Quality();
+		Double_t photon3_sq = dPhoton3Wrapper->Get_Shower_Quality();
+		Double_t photon4_sq = dPhoton4Wrapper->Get_Shower_Quality();
+		 
+
+		//Uniqueness tracking: Build the map of particles used for the missing mass
+			//For beam: Don't want to group with final-state photons. Instead use "Unknown" PID (not ideal, but it's easy).
+			
+		map<Particle_t, set<Int_t> > locUsedThisCombo_MissingMass;
+		
+		locUsedThisCombo_MissingMass[Unknown].insert(locBeamID); //beam
+		locUsedThisCombo_MissingMass[Proton].insert(locProtonTrackID);
+		locUsedThisCombo_MissingMass[Gamma].insert(locPhoton1NeutralID);
+		locUsedThisCombo_MissingMass[Gamma].insert(locPhoton2NeutralID);
+		locUsedThisCombo_MissingMass[PiMinus].insert(locPiMinusTrackID);
+		locUsedThisCombo_MissingMass[PiPlus].insert(locPiPlusTrackID);
+		locUsedThisCombo_MissingMass[Gamma].insert(locPhoton3NeutralID);
+		locUsedThisCombo_MissingMass[Gamma].insert(locPhoton4NeutralID);
+		
+		//	cout<<"Before uniqe combo cut "<<endl;
+
+		//compare to what's been used so far
+		if(locUsedSoFar_MissingMass.find(locUsedThisCombo_MissingMass) == locUsedSoFar_MissingMass.end())
+		{
+			//unique missing mass combo: histogram it, and register this combo of particles
+			//dHist_MissingMassSquared->Fill(locMissingMassSquared); // Fills in-time and out-of-time beam photon combos
+			//dHist_MissingMassSquared->Fill(locMissingMassSquared,locHistAccidWeightFactor); // Alternate version with accidental subtraction
+		  //cout<<"After uniqe combo cut "<<endl;
+
+		  	Bool_t beamenergy = (locBeamP4.E() > 8.2) && (locBeamP4.E() < 8.8);
+			Bool_t MissingMassSquaredcut = (locMissingP4_Measured.M2() > -0.02) && (locMissingP4_Measured.M2() < 0.02);
+			Bool_t etaprimemasswindow = (locetaprimeP4.M() > 0.90) && (locetaprimeP4.M() < 1.02);
+			Bool_t twindow = ((-1)*loct.M2() > 0.1) && ((-1)*loct.M2() < 0.7);
+
+			Bool_t pi013 = ((locPhoton13P4.M() > 0.10) && (locPhoton13P4.M() < 0.175)); 
+			Bool_t pi024 = ((locPhoton24P4.M() > 0.10) && (locPhoton24P4.M() < 0.175));
+			Bool_t pi014 = ((locPhoton14P4.M() > 0.10) && (locPhoton14P4.M() < 0.175));
+			Bool_t pi023 = ((locPhoton23P4.M() > 0.10) && (locPhoton23P4.M() < 0.175));
+			Bool_t omega = (locpippimpi0P4.M() > 0.73) && (locpippimpi0P4.M()< 0.83);
+			Bool_t pi0p_deltap = locpi0pP4.M() < 1.4;
+
+			Bool_t sq = ((photon1_sq > 0.5)&& (photon2_sq > 0.5) && (photon3_sq > 0.5) && (photon4_sq > 0.5));
+
+			
+			//if(MissingMassSquaredcut && beamenergy && !locAccid &&  etaprimemasswindow && twindow && //&& //selection cuts
+
+			//!((pi013 && pi024) || (pi014 && pi023)) && 									  //veto cuts
+			//!(pi0p_deltap) &&
+			//!(omega) 
+
+			if(MissingMassSquaredcut  && etaprimemasswindow  && twindow && beamenergy && !locAccid){
+			 dHist_showerquality1->Fill(photon1_sq);
+			dHist_showerquality2->Fill(photon2_sq);
+			dHist_showerquality3->Fill(photon3_sq);
+			dHist_showerquality4->Fill(photon4_sq);}
+
+	
+			if(etaprimemasswindow  && twindow  && sq && beamenergy && !locAccid){
+			  dHist_MissingMassSquared->Fill(locMissingP4_Measured.M2());
+			}
+	        
+			if(MissingMassSquaredcut && twindow  && sq && beamenergy && !locAccid){
+			  dHist_EtaPrimeMass->Fill(locetaprimeP4.M());
+			}
+
+			if(MissingMassSquaredcut  && etaprimemasswindow  && twindow  && sq && beamenergy){
+			  dHist_deltatRF->Fill(locDeltaT_RF);
+			}
+
+			if(MissingMassSquaredcut  && etaprimemasswindow  && sq && beamenergy && !locAccid){
+			  dHist_tmand->Fill((-1)*loct.M2());
+			}
+
+			if(MissingMassSquaredcut  && etaprimemasswindow  && twindow  && sq && !locAccid){
+			  dHist_BeamEnergy->Fill(locBeamP4.E());
+			}
+			
+
+
+
+
+
+			
+			if(MissingMassSquaredcut  && etaprimemasswindow  && twindow  && sq && beamenergy && !locAccid)
+			
+			// &&!(omega))
+			{
+			  //cout<<"After all cuts "<<endl;
+			  dHist_Chi2_cut->Fill(locKinFitConLev);
+			
+			  dFlatTreeInterface->Fill_Fundamental<Double_t>("dt", locDeltaT_RF);
+			  dFlatTreeInterface->Fill_Fundamental<Double_t>("be", locBeamP4.E());
+			  dFlatTreeInterface->Fill_Fundamental<Double_t>("mm2m",  locMissingP4_Measured.M2());
+			  dFlatTreeInterface->Fill_Fundamental<Double_t>("kinfit_CL", locKinFitConLev);
+
+			  dFlatTreeInterface->Fill_Fundamental<Double_t>("mpi013", locPhoton13P4.M());
+			  dFlatTreeInterface->Fill_Fundamental<Double_t>("mpi024", locPhoton24P4.M());
+			  dFlatTreeInterface->Fill_Fundamental<Double_t>("mpi014", locPhoton14P4.M());
+			  dFlatTreeInterface->Fill_Fundamental<Double_t>("mpi023", locPhoton23P4.M());
+
+			  dFlatTreeInterface->Fill_Fundamental<Double_t>("metap", locetaprimeP4.M());
+			  dFlatTreeInterface->Fill_Fundamental<Double_t>("metappi0", locetaprimepi0P4.M());
+			  dFlatTreeInterface->Fill_Fundamental<Double_t>("mpippimpi0", locpippimpi0P4.M());
+			  dFlatTreeInterface->Fill_Fundamental<Double_t>("mpi0p", locpi0pP4.M());
+			  dFlatTreeInterface->Fill_Fundamental<Double_t>("pi0_cost_gammapres",  p4_COM_pi0.CosTheta());
+
+			  dFlatTreeInterface->Fill_Fundamental<Double_t>("cost_gj", vetaprime_GJ.CosTheta());
+			  dFlatTreeInterface->Fill_Fundamental<Double_t>("cost_hx", vetaprime_HX.CosTheta());
+
+			  dFlatTreeInterface->Fill_Fundamental<Double_t>("phi_gj", vetaprime_GJ.Phi() * (180/pi));
+			  dFlatTreeInterface->Fill_Fundamental<Double_t>("phi_hx", vetaprime_HX.Phi() * (180/pi));
+
+			  dFlatTreeInterface->Fill_Fundamental<Double_t>("cost_com_X", p4_COM_X.CosTheta());
+			  dFlatTreeInterface->Fill_Fundamental<Double_t>("phi_com_X", p4_COM_X.Phi() * (180/pi));
+
+			
+
+			
+			  dFlatTreeInterface->Fill_Fundamental<Double_t>("event_num",  Get_EventNumber());
+			  dFlatTreeInterface->Fill_Fundamental<Double_t>("run_num",  locRunNumber);
+
+			  dFlatTreeInterface->Fill_Fundamental<Float_t>("px_pr", locProtonP4.Px());
+			  dFlatTreeInterface->Fill_Fundamental<Float_t>("px_etapr", locetaprimeP4.Px());
+			  dFlatTreeInterface->Fill_Fundamental<Float_t>("px_pi0", locPhoton12P4.Px());
+			  dFlatTreeInterface->Fill_Fundamental<Float_t>("py_pr", locProtonP4.Py());
+			  dFlatTreeInterface->Fill_Fundamental<Float_t>("py_etapr", locetaprimeP4.Py());
+			  dFlatTreeInterface->Fill_Fundamental<Float_t>("py_pi0", locPhoton12P4.Py());
+			  dFlatTreeInterface->Fill_Fundamental<Float_t>("pz_pr", locProtonP4.Pz());
+			  dFlatTreeInterface->Fill_Fundamental<Float_t>("pz_etapr", locetaprimeP4.Pz());
+			  dFlatTreeInterface->Fill_Fundamental<Float_t>("pz_pi0", locPhoton12P4.Pz());
+			  dFlatTreeInterface->Fill_Fundamental<Float_t>("e_pr", locProtonP4.E());
+			  dFlatTreeInterface->Fill_Fundamental<Float_t>("e_etapr", locetaprimeP4.E());
+			  dFlatTreeInterface->Fill_Fundamental<Float_t>("e_pi0", locPhoton12P4.E());
+			  dFlatTreeInterface->Fill_Fundamental<Float_t>("px_beam", locBeamP4.Px());
+			  dFlatTreeInterface->Fill_Fundamental<Float_t>("py_beam", locBeamP4.Py());
+			  dFlatTreeInterface->Fill_Fundamental<Float_t>("pz_beam", locBeamP4.Pz());
+			  dFlatTreeInterface->Fill_Fundamental<Float_t>("e_beam", locBeamP4.E());
+			  dFlatTreeInterface->Fill_Fundamental<Int_t>("pol",  dPolarizationAngle); 
+
+			  dFlatTreeInterface->Fill_Fundamental<Double_t>("mpippimpi0eta", locpi0pippimeta.M());
+
+
+
+
+	       	Fill_FlatTree();
+
+			}
+
+			locUsedSoFar_MissingMass.insert(locUsedThisCombo_MissingMass);
+		}
+
+		//E.g. Cut
+		//if((locMissingMassSquared < -0.04) || (locMissingMassSquared > 0.04))
+		//{
+		//	dComboWrapper->Set_IsComboCut(true);
+		//	continue;
+		//}
+
+		/****************************************** FILL FLAT TREE (IF DESIRED) ******************************************/
+
+		/*
+		//FILL ANY CUSTOM BRANCHES FIRST!!
+		Int_t locMyInt_Flat = 7;
+		dFlatTreeInterface->Fill_Fundamental<Int_t>("flat_my_int", locMyInt_Flat);
+
+		TLorentzVector locMyP4_Flat(4.0, 3.0, 2.0, 1.0);
+		dFlatTreeInterface->Fill_TObject<TLorentzVector>("flat_my_p4", locMyP4_Flat);
+
+		for(int loc_j = 0; loc_j < locMyInt_Flat; ++loc_j)
+		{
+			dFlatTreeInterface->Fill_Fundamental<Int_t>("flat_my_int_array", 3*loc_j, loc_j); //2nd argument = value, 3rd = array index
+			TLorentzVector locMyComboP4_Flat(8.0, 7.0, 6.0, 5.0);
+			dFlatTreeInterface->Fill_TObject<TLorentzVector>("flat_my_p4_array", locMyComboP4_Flat, loc_j);
+		}
+		*/
+
+		//FILL FLAT TREE
+		//Fill_FlatTree(); //for the active combo
+	} // end of combo loop
+
+	//FILL HISTOGRAMS: Num combos / events surviving actions
+	Fill_NumCombosSurvivedHists();
+
+	/******************************************* LOOP OVER THROWN DATA (OPTIONAL) ***************************************/
+/*
+	//Thrown beam: just use directly
+	if(dThrownBeam != NULL)
+		double locEnergy = dThrownBeam->Get_P4().E();
+
+	//Loop over throwns
+	for(UInt_t loc_i = 0; loc_i < Get_NumThrown(); ++loc_i)
+	{
+		//Set branch array indices corresponding to this particle
+		dThrownWrapper->Set_ArrayIndex(loc_i);
+
+		//Do stuff with the wrapper here ...
+	}
+*/
+	/****************************************** LOOP OVER OTHER ARRAYS (OPTIONAL) ***************************************/
+/*
+	//Loop over beam particles (note, only those appearing in combos are present)
+	for(UInt_t loc_i = 0; loc_i < Get_NumBeam(); ++loc_i)
+	{
+		//Set branch array indices corresponding to this particle
+		dBeamWrapper->Set_ArrayIndex(loc_i);
+
+		//Do stuff with the wrapper here ...
+	}
+
+	//Loop over charged track hypotheses
+	for(UInt_t loc_i = 0; loc_i < Get_NumChargedHypos(); ++loc_i)
+	{
+		//Set branch array indices corresponding to this particle
+		dChargedHypoWrapper->Set_ArrayIndex(loc_i);
+
+		//Do stuff with the wrapper here ...
+	}
+
+	//Loop over neutral particle hypotheses
+	for(UInt_t loc_i = 0; loc_i < Get_NumNeutralHypos(); ++loc_i)
+	{
+		//Set branch array indices corresponding to this particle
+		dNeutralHypoWrapper->Set_ArrayIndex(loc_i);
+
+		//Do stuff with the wrapper here ...
+	}
+*/
+
+	/************************************ EXAMPLE: FILL CLONE OF TTREE HERE WITH CUTS APPLIED ************************************/
+/*
+	Bool_t locIsEventCut = true;
+	for(UInt_t loc_i = 0; loc_i < Get_NumCombos(); ++loc_i) {
+		//Set branch array indices for combo and all combo particles
+		dComboWrapper->Set_ComboIndex(loc_i);
+		// Is used to indicate when combos have been cut
+		if(dComboWrapper->Get_IsComboCut())
+			continue;
+		locIsEventCut = false; // At least one combo succeeded
+		break;
+	}
+	if(!locIsEventCut && dOutputTreeFileName != "")
+		Fill_OutputTree();
+*/
+
+	return kTRUE;
+}
+
+void DSelector_etaprpi0::Finalize(void)
+{
+	//Save anything to output here that you do not want to be in the default DSelector output ROOT file.
+
+	//Otherwise, don't do anything else (especially if you are using PROOF).
+		//If you are using PROOF, this function is called on each thread,
+		//so anything you do will not have the combined information from the various threads.
+		//Besides, it is best-practice to do post-processing (e.g. fitting) separately, in case there is a problem.
+
+	//DO YOUR STUFF HERE
+
+	//fileout->cd(); 
+	//qfactortree->Write();
+	//fileout->Close();
+
+	//CALL THIS LAST
+	DSelector::Finalize(); //Saves results to the output file
+}

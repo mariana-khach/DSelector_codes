@@ -1,0 +1,34 @@
+do run batch jobs , do the following
+1) swif2 create -workflow Mar_2017 (create workflow)
+2) ./launch_v2.py configfile run_min run_max (register jobs)
+3) swif2 run -workflow  Mar_2017 (run jobs)
+swif2 status -workflow Mar_2017
+swif2 cancel -delete -workflow Mar_2017
+swif2 modify-jobs -workflow  Mar_2017  -time add 2h -problems AUGER-TIMEOUT
+swif2 retry-jobs -workflow Mar_2017 -problems SLURM_FAILED
+
+
+Spring 2018:
+swif2 create -workflow Mar_s2018
+./launch_v2.py etaprpi0__B4_18.config 040856 042559
+swif2 run -workflow  Mar_s2018
+swif2 status -workflow Mar_s2018
+
+
+Fall 2018:
+swif2 create -workflow Mar_f2018
+./launch_v2.py etaprpi0__B4_18_08.config 050685 051768
+swif2 run -workflow  Mar_f2018
+swif2 status -workflow Mar_f2018
+
+
+
+Resources, env and input and output are mentioned in config file. For example, take a look at etaprpi0__B4_17.config for Spring2017 data
+
+
+2017: 030274-031057
+2018: 040856-042559
+2018_08:050685-051768
+
+Mar_s2018
+Mar_f2018

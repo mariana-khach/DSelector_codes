@@ -1,0 +1,46 @@
+void Run_DSelector_etaprpi0(){
+ 
+
+
+   TChain *my_tchain = new TChain("pi0etapr__etapr_pippimeta__pi0_gg__eta_gg__B4_M35_Tree");
+                                 
+                                   
+  
+
+  //Flat MC for phase 1 correctg proportion, Ebeam 7.6-8.8, need to change tree name to "pi0etapr__etapr_pippimeta__pi0_gg__eta_gg__B4_M35_Tree"
+   //my_tchain->Add("/cache/halld/gluex_simulations/REQUESTED_MC/Mariana_spring2018second_flayMC_wideEcut_20220813010627am/root/trees/*.root");
+   //my_tchain->Add("/cache/halld/gluex_simulations/REQUESTED_MC/Mariana_fall2018_flatMCnew_wideEcut_20220816044401pm/root/trees/*.root");
+   //my_tchain->Add("/cache/halld/gluex_simulations/REQUESTED_MC/Mariana_2017_flatMCcorrect_wideEcut_20220907010700pm/root/trees/*root");
+   
+
+
+ //Flat MC for phase 1 correctg proportion, Ebeam 8.2-8.8, need to change tree name to "pi0etapr__etapr_pippimeta__pi0_gg__eta_gg__B4_M35_Tree"
+   //my_tchain->Add("/cache/halld/gluex_simulations/REQUESTED_MC/Marina_spring2018_20220324125234am/root/trees/*.root");
+    //  my_tchain->Add("/cache/halld/gluex_simulations/REQUESTED_MC/Mariana_fall2018_20220324010050am/root/trees/*.root");
+    //    my_tchain->Add("/cache/halld/gluex_simulations/REQUESTED_MC/Mariana_spring2017_20220324123916am/root/trees/*.root");
+
+
+   
+   //GlueX phase 1 data
+//need to change tree name for this to be"pi0etapr__B4_M35_Tree"
+    //Entire 2017
+   // my_tchain->Add("/cache/halld/RunPeriod-2017-01/analysis/ver50/tree_pi0etapr__B4_M35/merged/*.root");
+   //my_tchain->Add("/cache/halld/RunPeriod-2017-01/analysis/ver50/tree_pi0etapr__B4_M35/merged/*0307*.root");
+//Entire spring 2018
+   // my_tchain->Add("/cache/halld/RunPeriod-2018-01/analysis/ver02/tree_pi0etapr__B4_M35/merged/*041*.root");
+//Entire fall 2018
+   //  my_tchain->Add("/cache/halld/RunPeriod-2018-08/analysis/ver02/tree_pi0etapr__B4_M35/merged/*051*.root");
+   
+
+
+
+   //Signal MC
+     my_tchain->Add("/lustre19/expphy/cache/halld/gluex_simulations/REQUESTED_MC/Mariana_signalMC_pol0_20230131054648am/root/trees/*.root");
+
+
+
+  DPROOFLiteManager::Process_Chain(my_tchain, "DSelector_etaprpi0.C+", 8); //my_num_threads = unsigned int
+  
+
+
+}

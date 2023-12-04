@@ -1,0 +1,6 @@
+#!/usr/bin/env csh
+
+#root -l 
+#gEnv->SetValue("ProofLite.Sandbox", "/volatile/halld/home/Mariana/PROOF/.proof/");
+# "$ROOT_ANALYSIS_HOME/scripts/Load_DSelector.C" -x "Run_DSelector_pippimetapr__B3_M35.C()"
+root -l -x  "$ROOT_ANALYSIS_HOME/scripts/Load_DSelector.C" -x "Run_DSelector_pippimetapr__B3_M35.C()"

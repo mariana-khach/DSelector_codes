@@ -1,0 +1,4 @@
+Proof.MaxOldSessions 8
+ProofPlayer.UseTreeCache 0
+gEnv->SetValue("ProofLite.Sandbox", "/volatile/halld/home/Mariana/PROOF/.proof/");
+

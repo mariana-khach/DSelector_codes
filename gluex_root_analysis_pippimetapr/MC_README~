@@ -1,0 +1,15 @@
+Malte has generated some MC, see details below
+
+
+Hi Mariana! I generated some gamma p -> etaprime pi- Delta++ -> (pi+ pi- eta) pi- (p pi+) events and also reconstructed them with the same analysis version as used for data based on the Fall2018 analysis launch ver02 . You can find the analysis trees here:
+/w/halld-scshelf2101/malte/MC/genr8_etap_pim/root/trees
+and the thrown trees here:
+/w/halld-scshelf2101/malte/MC/genr8_etap_pim/root/thrown
+We could use these trees to check all the cuts and the combinatorics etc. for your etaprime pi- DSelector, and see if everything works as it should
+
+
+
+
+
+3:37
+all the config files to generate that sample are also there. Most important are probably the MC.config and MC.genr8 files in /w/halld-scshelf2101/malte/MC/genr8_etap_pim , in case you want to know what was used to generate this.

@@ -1,0 +1,89 @@
+#include <iostream>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <string>
+#include <vector>
+#include <sstream>
+#include "TFile.h"
+#include "TNtuple.h"
+#include "TTree.h"
+#include "TH2F.h"
+#include "TH1F.h"
+#include "TMath.h"
+#include "TChain.h"
+#include "TLorentzVector.h"
+#include "TLegend.h"
+#include "TVector3.h"
+#include "TStyle.h"
+#include "TF1.h"
+#include "TCanvas.h"
+#include "TLine.h"
+#include <TRandom3.h>
+#include "TGraphErrors.h"
+#include "TLatex.h"
+#include "TPad.h"
+#include "TStyle.h"
+#include <numeric>
+#include "TLorentzRotation.h"
+#include "TChain.h"
+
+
+void N_events_aftercuts()
+{
+
+ cout<<"Here1"<<endl;
+  TFile *fileIn=new TFile("pippimetapr__B3_M35_2018.root");
+ TFile *fileOUT=new TFile("N_events_aftercuts.root","Recreate");
+
+ cout<<"Here2"<<endl;
+ TH1F* h1_withoutcut = (TH1F*)fileIn->Get("BeamEnergy");
+ double N_tot=h1_withoutcut->GetEntries();
+ cout<<"N_withoutcut= "<<N_tot<<endl;
+
+ TH1F* h1_afterEbeam = (TH1F*)fileIn->Get("dHist_phot1_theta");
+ double N_afterEbeam=h1_afterEbeam->GetEntries();
+ cout<<"N_afterEbeam= "<<N_afterEbeam<<" %= "<<(N_tot-N_afterEbeam)/N_tot*100.<<endl;
+
+ TH1F* h1_afterphotontheta = (TH1F*)fileIn->Get("dHist_phot2_theta_cut");
+ double N_afterphotontheta=h1_afterphotontheta->GetEntries();
+cout<<"N_afterphotontheta= "<<N_afterphotontheta<<" %= "<<(N_afterEbeam-N_afterphotontheta)/N_tot*100.<<endl;
+
+ TH1F* h1_afterphotFCALshower = (TH1F*)fileIn->Get("dHist_showerquality2_cut");
+ double N_afterphotFCALshower=h1_afterphotFCALshower->GetEntries();
+cout<<"N_afterphotFCALshower= "<<N_afterphotFCALshower<<" %= "<<(N_afterphotontheta-N_afterphotFCALshower)/N_tot*100.<<endl;
+
+TH1F* h1_afterprotzvert = (TH1F*)fileIn->Get("prot_vert_cut");
+ double N_afterprotzvert=h1_afterprotzvert->GetEntries();
+cout<<"N_afterprotzvert= "<<N_afterprotzvert<<" %= "<<(N_afterphotFCALshower-N_afterprotzvert)/N_tot*100.<<endl;
+
+ TH1F* h1_afterprotperpvert = (TH1F*)fileIn->Get("prot_perpvert_cut");
+ double N_afterprotperpvert=h1_afterprotperpvert->GetEntries();
+cout<<"N_afterprotperpvert= "<<N_afterprotperpvert<<" %= "<<(N_afterprotzvert-N_afterprotperpvert)/N_tot*100.<<endl;
+
+ TH1F* h1_afterchisq = (TH1F*)fileIn->Get("Chi2PostEtaPrime_cut");
+ double N_afterchisq=h1_afterchisq->GetEntries();
+cout<<"N_afterchisq= "<<N_afterchisq<<" %= "<<(N_afterprotperpvert-N_afterchisq)/N_tot*100.<<endl;
+
+ TH1F* h1_afteraccid = (TH1F*)fileIn->Get("BeamEnergy_accid");
+ double N_afteraccid=h1_afteraccid->Integral();
+cout<<"N_afteraccid= "<<N_afteraccid<<" %= "<<(N_afterchisq-N_afteraccid)/N_tot*100.<<endl;
+
+ TH1F* h1_afteretaprime = (TH1F*)fileIn->Get("BeamEnergy_accid_sideband");
+ double N_afteretaprime=h1_afteretaprime->Integral();
+cout<<"N_afteretaprime= "<<N_afteretaprime<<" %= "<<(N_afteraccid-N_afteretaprime)/N_tot*100.<<endl;
+
+ TH1F* h1_afterdeltapp = (TH1F*)fileIn->Get("BeamEnergy_deltapp");
+ double N_afterdeltapp=h1_afterdeltapp->Integral();
+cout<<"N_afterdeltapp= "<<N_afterdeltapp<<" %= "<<(N_afteretaprime-N_afterdeltapp)/N_tot*100.<<endl;
+
+
+TH1F* h1_aftertcut = (TH1F*)fileIn->Get("Chi2_cut");
+ double N_aftertcut=h1_aftertcut->Integral();
+cout<<"N_aftertcut= "<<N_aftertcut<<" %= "<<(N_afterdeltapp-N_aftertcut)/N_tot*100.<<endl;
+
+TH1F* h1_afterMMcut = (TH1F*)fileIn->Get("EtaPrimePiMinusMass_accid_sideband");
+double N_afterMMcut=h1_afterMMcut->Integral();
+cout<<"N_afterMMcut= "<<N_afterMMcut<<" %= "<<(N_aftertcut-N_afterMMcut)/N_tot*100.<<endl;
+
+}

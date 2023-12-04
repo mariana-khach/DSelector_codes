@@ -1,0 +1,55 @@
+We completed a full analysis launch for the 2020 data set. You can find 984 merged trees for each of the 57 reactions on cache:
+
+/cache/halld/RunPeriod-2019-11/analysis/ver04
+
+Some of the files may have already migrated to tape. Additional information about the launch can be found here:
+
+https://halldweb.jlab.org/wiki-private/index.php/Spring_2020_Analysis_Launch#Version04 
+
+The information is in the tree name “tree_pi0etapr__B4_M35”. The default decay of the eta' is to eta pi+ pi-, and the mass of the eta' is not constrained (M35). Both pi0 and eta are mass-constrained by default for this reaction.
+If the masses were not constrained, you would see M7 for pi0 and M17 for eta in the name.
+
+
+
+
+To make a new DSelector analysis code do the steps below:
+
+MakeDSelector /cache/halld/RunPeriod-2019-11/analysis/ver04/tree_pi0etapr__B4_M35/merged/tree_pi0etapr__B4_M35_073262.root pi0etapr__B4_M35_Tree  pi0etapr__B4_M35_Tree_2020
+
+
+
+To run existing DSelector code:
+
+marianak@ifarm1901.jlab.org> root -l -b /cache/halld/RunPeriod-2019-11/analysis/ver04/tree_pi0etapr__B4_M35/merged/tree_pi0etapr__B4_M35_073262.root
+root [1] .x $ROOT_ANALYSIS_HOME/scripts/Load_DSelector.C
+root [2] 
+root [2] TTree* locTree=(TTree*)gDirectory->Get("pi0etapr__B4_M35_Tree")
+(TTree *) 0x37dbbc0
+root [3] locTree->Process("DSelector_pi0etapr__B4_M35_Tree_2020.C+")
+
+
+
+ Run PROOF-Lite on a single file:
+
+marianak@ifarm1901.jlab.org> root -l
+root [0] .x $ROOT_ANALYSIS_HOME/scripts/Load_DSelector.C
+root [1] DPROOFLiteManager::Process_Tree("/cache/halld/RunPeriod-2019-11/analysis/ver04/tree_pi0etapr__B4_M35/merged/tree_pi0etapr__B4_M35_073262.root","pi0etapr__B4_M35_Tree","DSelector_pi0etapr__B4_M35_Tree_2020.C+",13)
+
+
+Run PROOF-Lite on a many files file:
+Exe_DSelector_pi0etapr__B4_M35_Tree_2020.csh
+
+
+
+
+Data Sets:
+
+GlueX Phase-I (Spring 2017, Spring 2018 and Fall 2018)
+• 𝜋 0 and 𝜂 masses constrained during kinfit
+• Phase 1 Locations:
+Spring 2017 : /mss/halld/RunPeriod-2017-01/analysis/ver30/tree_pi0pippimeta__B4
+Spring 2018 : /mss/halld/RunPeriod-2018-01/analysis/ver02/tree_pi0etapr__B4_M35
+Fall 2018 : /mss/halld/RunPeriod-2018-08/analysis/ver14/tree_pi0pippimeta__B4
+
+Phase 2, 2020 data 
+/cache/halld/RunPeriod-2019-11/analysis/ver04/tree_pi0etapr__B4_M35/merged/tree_pi0etapr__B4_M35_073262.root

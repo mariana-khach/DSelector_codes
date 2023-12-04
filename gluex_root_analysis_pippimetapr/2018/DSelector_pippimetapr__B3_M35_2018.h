@@ -1,0 +1,94 @@
+#ifndef DSelector_pippimetapr__B3_M35_2018_h
+#define DSelector_pippimetapr__B3_M35_2018_h
+
+#include <iostream>
+
+#include "DSelector/DSelector.h"
+#include "DSelector/DHistogramActions.h"
+#include "DSelector/DCutActions.h"
+
+#include "TH1I.h"
+#include "TH2I.h"
+
+class DSelector_pippimetapr__B3_M35_2018 : public DSelector
+{
+	public:
+
+		DSelector_pippimetapr__B3_M35_2018(TTree* locTree = NULL) : DSelector(locTree){}
+		virtual ~DSelector_pippimetapr__B3_M35_2018(){}
+
+		void Init(TTree *tree);
+		Bool_t Process(Long64_t entry);
+
+	private:
+
+		void Get_ComboWrappers(void);
+		void Finalize(void);
+
+		// BEAM POLARIZATION INFORMATION
+		UInt_t dPreviousRunNumber;
+		bool dIsPolarizedFlag; //else is AMO
+		bool dIsPARAFlag; //else is PERP or AMO
+
+		bool dIsMC;
+
+		// ANALYZE CUT ACTIONS
+		// // Automatically makes mass histograms where one cut is missing
+		DHistogramAction_AnalyzeCutActions* dAnalyzeCutActions;
+
+		//CREATE REACTION-SPECIFIC PARTICLE ARRAYS
+
+		//Step 0
+		DParticleComboStep* dStep0Wrapper;
+		DBeamParticle* dComboBeamWrapper;
+		DChargedTrackHypothesis* dPiPlus1Wrapper;
+		DChargedTrackHypothesis* dPiMinus1Wrapper;
+		DChargedTrackHypothesis* dProtonWrapper;
+
+		//Step 1
+		DParticleComboStep* dStep1Wrapper;
+		DChargedTrackHypothesis* dPiMinus2Wrapper;
+		DChargedTrackHypothesis* dPiPlus2Wrapper;
+
+		//Step 2
+		DParticleComboStep* dStep2Wrapper;
+		DKinematicData* dDecayingEtaWrapper;
+		DNeutralParticleHypothesis* dPhoton1Wrapper;
+		DNeutralParticleHypothesis* dPhoton2Wrapper;
+
+		// DEFINE YOUR HISTOGRAMS HERE
+		// EXAMPLES:
+		TH1F* dHist_MissingMassSquared,* dHist_MissingMassSquared_cut,*dHist_phot1_theta,*dHist_phot2_theta,*dHist_phot1_theta_cut,*dHist_phot2_theta_cut,*dHist_showerquality1,*dHist_showerquality2,*dHist_showerquality1_cut,*dHist_showerquality2_cut;
+		TH1F* dHist_BeamEnergy,*dHist_BeamEnergy_accid,*dHist_BeamEnergy_accid_sideband,*dHist_BeamEnergy_deltapp,*dHist_deltatRF_weight,*dHist_deltatRF;
+		TH1F* dHist_Chi2,* dHist_Chi2_cut, *dHist_Chi2PostEtaPrime, *dHist_EtaPrimeMass, *dHist_DeltaPPMass_accid,*dHist_EtaPrimePiMinusMass_accid_sideband,*dHist_EtaPrimePiMinusMass_accid_sideband_tcut,*dHist_EtaPrimePiMinusMass_accid,*dHist_tmand_cut,*dHist_tmand,*dHist_EtaMass_measured,*Hist_EtaMass,*dHist_EtaPrimeMass_accid_sideband,*dHist_EtaPrimeMass_accid,*dHist_EtaMass;
+		TH1F* dHist_Bayron_pipl2, *dHist_Bayron_pimi1,*dHist_Bayron_pimi2, *dHist_rho_pim1pip1,*dHist_rho_pim1pip2, *dHist_rho_pim1pim2, *dHist_rho_pip1pim2, *dHist_rho_pip1pip2, *dHist_rho_pim2pip2,*dHist_Eunusedshowers,*dHist_prot_vert,*dHist_prot_vert_cut,*dHist_prot_perpvert,*dHist_prot_perpvert_cut,*dHist_Chi2PostEtaPrime_cut,*dHist_DeltaPPMass_accid_cut;
+		TH2F *dHist_CosThetaEta_GJ_vs_EtaPiMinusMass_accid_sideband,*dHist_CosThetaEta_GJ_vs_EtaPiMinusMass_accid;
+
+		Int_t PolDirection;
+
+
+	ClassDef(DSelector_pippimetapr__B3_M35_2018, 0);
+};
+
+void DSelector_pippimetapr__B3_M35_2018::Get_ComboWrappers(void)
+{
+	//Step 0
+	dStep0Wrapper = dComboWrapper->Get_ParticleComboStep(0);
+	dComboBeamWrapper = static_cast<DBeamParticle*>(dStep0Wrapper->Get_InitialParticle());
+	dPiPlus1Wrapper = static_cast<DChargedTrackHypothesis*>(dStep0Wrapper->Get_FinalParticle(0));
+	dPiMinus1Wrapper = static_cast<DChargedTrackHypothesis*>(dStep0Wrapper->Get_FinalParticle(1));
+	dProtonWrapper = static_cast<DChargedTrackHypothesis*>(dStep0Wrapper->Get_FinalParticle(3));
+
+	//Step 1
+	dStep1Wrapper = dComboWrapper->Get_ParticleComboStep(1);
+	dPiMinus2Wrapper = static_cast<DChargedTrackHypothesis*>(dStep1Wrapper->Get_FinalParticle(0));
+	dPiPlus2Wrapper = static_cast<DChargedTrackHypothesis*>(dStep1Wrapper->Get_FinalParticle(1));
+
+	//Step 2
+	dStep2Wrapper = dComboWrapper->Get_ParticleComboStep(2);
+	dDecayingEtaWrapper = dStep2Wrapper->Get_InitialParticle();
+	dPhoton1Wrapper = static_cast<DNeutralParticleHypothesis*>(dStep2Wrapper->Get_FinalParticle(0));
+	dPhoton2Wrapper = static_cast<DNeutralParticleHypothesis*>(dStep2Wrapper->Get_FinalParticle(1));
+}
+
+#endif // DSelector_pippimetapr__B3_M35_2018_h

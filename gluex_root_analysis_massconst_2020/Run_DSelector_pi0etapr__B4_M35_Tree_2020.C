@@ -1,0 +1,12 @@
+void Run_DSelector_pi0etapr__B4_M35_Tree_2020(){
+ 
+
+ 
+  TChain *my_tchain = new TChain("pi0etapr__B4_M35_Tree");
+  my_tchain->Add("/cache/halld/RunPeriod-2019-11/analysis/ver04/tree_pi0etapr__B4_M35/merged/tree_pi0etapr__B4_M35_*.root");
+
+
+   
+  DPROOFLiteManager::Process_Chain(my_tchain, "DSelector_pi0etapr__B4_M35_Tree_2020.C+", 8); //my_num_threads = unsigned int
+  
+}

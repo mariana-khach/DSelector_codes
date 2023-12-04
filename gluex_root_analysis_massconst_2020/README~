@@ -1,0 +1,11 @@
+We completed a full analysis launch for the 2020 data set. You can find 984 merged trees for each of the 57 reactions on cache:
+
+/cache/halld/RunPeriod-2019-11/analysis/ver04
+
+Some of the files may have already migrated to tape. Additional information about the launch can be found here:
+
+https://halldweb.jlab.org/wiki-private/index.php/Spring_2020_Analysis_Launch#Version04 
+
+The information is in the tree name. The default decay of the eta' is to eta pi+ pi-, and the mass of the eta' is not constrained (M35). Both pi0 and eta are mass-constrained by default for this reaction.
+
+If the masses were not constrained, you would see M7 for pi0 and M17 for eta in the name.

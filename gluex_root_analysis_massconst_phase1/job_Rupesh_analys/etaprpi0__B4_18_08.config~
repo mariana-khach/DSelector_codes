@@ -1,0 +1,56 @@
+# Key/value pairs are separated by white space
+# Lines starting with # and empty lines are ignored
+# Only the first two values are evaluated, so for lines like:
+#     KEYVALUE VALUE1 VALUE2
+# VALUE2 is ignored
+# For files & directories: Must specify full path
+
+# SCICOMP JOB ACCOUNTING
+#PROJECT                       gluex                 # http://scicomp.jlab.org/scicomp/#/projects
+PROJECT                        halld
+TRACK                          production              # https://scicomp.jlab.org/docs/batch_job_tracks
+OS                             general
+
+# JOB RESOURCES
+NCORES                        12
+DISK                          40GB
+RAM                           5GB
+TIMELIMIT                     4hrs
+
+# WORKFLOW DEFINITION
+WORKFLOW                      Mar_f2018                         # MUST start with a letter!
+
+# JOB, SCRIPT CONTROL
+#ENVFILE                       /group/halld/Software/build_scripts/gluex_env_jlab.sh
+#ENVFILE                       /w/halld-scifs17exp/halld2/home/rupesh/halld/pi0pippimeta_ver20/root_analysis/setup.sh
+#ENVFILE                       /w/halld-scifs17exp/halld2/home/rupesh/halld/launch/root_analysis/setup.sh
+#ENVFILE                       /w/halld-scifs17exp/halld2/home/rupesh/halld/launch/root_analysis/change_gluex_root_analysis_ONLY.csh         
+ENVFILE                      /w/halld-scshelf2101/Mariana/DSelector_analysis/gluex_root_analysis_massconst_Rupeshlatest/job_Ryan_analys/change_gluex_root_analysis_ONLY.sh
+ 
+#SCRIPTFILE                    /w/halld-scifs17exp/halld2/home/rupesh/halld/pi0pippimeta_ver20/root_analysis/script.sh
+#SCRIPTFILE 		       /w/halld-scifs17exp/halld2/home/rupesh/halld/launch/root_analysis/script_try.sh
+SCRIPTFILE                     /w/halld-scshelf2101/Mariana/DSelector_analysis/gluex_root_analysis_massconst_Rupeshlatest/job_Ryan_analys/script.sh
+#CACHE_PIN_DAYS               21                                                                           # max is 60, 0 or comment-out for none
+
+# ROOT CONFIG
+#ROOT_SCRIPT                   /w/halld-scifs17exp/halld2/home/rupesh/halld/pi0pippimeta_ver20/root_analysis/Run_Selector.C
+#ROOT_SCRIPT  		       /w/halld-scifs17exp/halld2/home/rupesh/halld/launch/root_analysis/Run_Selector.C
+ROOT_SCRIPT                   /w/halld-scshelf2101/Mariana/DSelector_analysis/gluex_root_analysis_massconst_Rupeshlatest/job_Ryan_analys/Run_Selector.C
+TREE_NAME                       pi0etapr__B4_M35_Tree
+#SELECTOR_NAME                 /w/halld-scifs17exp/halld2/home/rupesh/halld/pi0pippimeta_ver20/DSelector_pi0etapr__B4_M35      # Leave .C off of the end!
+#SELECTOR_NAME               /w/halld-scifs17exp/halld2/home/rupesh/halld/DSelectors/DSelector_pi0pippimeta 
+#SELECTOR_NAME               /w/halld-scshelf2101/halld2/home/rupesh/halld/DSelectors/DSelector_pi0pippimeta_18
+SELECTOR_NAME              /w/halld-scshelf2101/Mariana/DSelector_analysis/gluex_root_analysis_massconst_Rupeshlatest/job_Ryan_analys/DSelector_etaprpi0
+
+
+# FILE INPUT, OUTPUT BASE DIRECTORIES
+#INDATA_TOPDIR     /mss/halld/RunPeriod-2017-01/analysis/ver36/tree_pi0etapr__B4_M35_M7_M17/merged/
+#INDATA_TOPDIR       /mss/halld/RunPeriod-2017-01/analysis/ver30/tree_pi0pippimeta__B4/merged/
+#INDATA_TOPDIR     /mss/halld/RunPeriod-2018-08/analysis/ver14/tree_pi0pippimeta__B4/merged/
+INDATA_TOPDIR       /mss/halld/RunPeriod-2018-08/analysis/ver02/tree_pi0etapr__B4_M35/merged/
+
+# FILE OUTPUT
+OUTDIR_LARGE      /w/halld-scshelf2101/Mariana/DSelector_analysis/gluex_root_analysis_massconst_Rupeshlatest/job_Ryan_analys/etaprpi0__B4_18_08     # REST, hist
+#OUTDIR_SMALL      /work/halld2/home/rupesh/halld/pi0pippimeta__B4_18_08				       # log
+OUTDIR_SMALL      /u/scifarm/farm_out/marianak/etaprpi0_18_08
+

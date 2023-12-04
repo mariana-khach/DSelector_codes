@@ -1,0 +1,44 @@
+To make a new DSelector analysis code do the steps below:
+
+MakeDSelector /cache/halld/RunPeriod-2018-08/analysis/ver02/tree_pippimeta__B4_M17/merged/tree_pippimeta__B4_M17_051765.root pippimeta__B4_M17_Tree pippimetapr__B3_M35_2018
+
+//Or use spring 2018 data below
+/cache/halld/RunPeriod-2018-01/analysis/ver02/tree_pippimeta__B4_M17/merged/tree_pippimeta__B4_M17_042559.root
+
+
+
+To run existing DSelector code:
+Might need to set correct python version using Mar_env.csh, that is compatible with gluex root version
+
+marianak@ifarm1901.jlab.org>root -l -b /cache/halld/RunPeriod-2018-08/analysis/ver02/tree_pippimeta__B4_M17/merged/tree_pippimeta__B4_M17_051765.root
+root [1] .x $ROOT_ANALYSIS_HOME/scripts/Load_DSelector.C
+root [2] TTree* locTree=(TTree*)gDirectory->Get("pippimeta__B4_M17_Tree")
+root [3] locTree->Process("DSelector_pippimetapr__B3_M35_2018.C+");
+
+
+
+
+ Run PROOF-Lite on a single file:
+
+marianak@ifarm1901.jlab.org> root -l
+root [0] .x $ROOT_ANALYSIS_HOME/scripts/Load_DSelector.C
+root [1] DPROOFLiteManager::Process_Tree("/cache/halld/RunPeriod-2018-08/analysis/ver02/tree_pippimeta__B4_M17/merged/tree_pippimeta__B4_M17_051765.root","pippimeta__B4_M17_Tree","DSelector_pippimetapr__B3_M35.C+",13)
+
+
+ Run PROOF-Lite on a many files file:
+Exe_DSelector_Moment_accept_data.csh
+
+
+
+
+Data Sets:
+
+GlueX Phase-I (Spring 2017, Spring 2018 and Fall 2018)
+• 𝜋 0 and 𝜂 masses constrained during kinfit
+• Locations:
+Spring 2017 : /mss/halld/RunPeriod-2017-01/analysis/ver27/tree_pippimetapr__B3_M35/
+Spring 2018 : /mss/halld/RunPeriod-2018-01/analysis/ver02/tree_pippimetapr__B4_M35/merged/
+Fall 2018 : /mss/halld/RunPeriod-2018-08/analysis/ver02/tree_pippimetapr__B4_M35/merged/
+
+Colins codes are in
+/work/halld/home/gleasonc/Hall-D/EtaPrimePiMinus/DSelector_pippimetapr_2018_MinCuts.C

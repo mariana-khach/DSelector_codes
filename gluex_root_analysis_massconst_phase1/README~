@@ -1,0 +1,111 @@
+THe flat MC generated for etaprime(pi+ pi- eta) pi0 data for E beam from 8.2-8.8 can be found here
+ 
+Fall 2018 19.25M
+/lustre19/expphy/cache/halld/gluex_simulations/REQUESTED_MC/Mariana_fall2018_20220324010050am/root/trees/
+Spring 2018 30.24M
+/lustre19/expphy/cache/halld/gluex_simulations/REQUESTED_MC/Marina_spring2018_20220324125234am/root/trees/
+Spring 2017 19.25M
+/lustre19/expphy/cache/halld/gluex_simulations/REQUESTED_MC/Mariana_spring2017_20220324123916am/root/trees/
+
+
+
+//Flat MC for phase 1 correctg proportion, Ebeam 7.6-8.8, need to change tree name to "pi0etapr__etapr_pippimeta__pi0_gg__eta_gg__B4_M35_Tree"
+   //my_tchain->Add("/cache/halld/gluex_simulations/REQUESTED_MC/Mariana_spring2018second_flayMC_wideEcut_20220813010627am/root/trees/*.root");
+   //my_tchain->Add("/cache/halld/gluex_simulations/REQUESTED_MC/Mariana_fall2018_flatMCnew_wideEcut_20220816044401pm/root/trees/*.root");
+   //my_tchain->Add("/cache/halld/gluex_simulations/REQUESTED_MC/Mariana_2017_flatMCcorrect_wideEcut_20220907010700pm/root/trees/*root");
+
+
+
+
+
+The steps for analysis are the following:
+
+Hi Mariana,
+
+The path to my DSelector code is /u/home/rupesh/DSelectors/DSelector_etaprpi0.C
+
+Answers,
+1. is correct
+2. Correction : Process through select_from_trees_produce_qfactors_v4.py to calculate the q_factors and apply 2pi0 cut.
+3. I apply this on select_from_trees_produce_qfactors_v4.py You will find a section starting with 
+"""**************** 3. uninque event selection cut  ****************""" 
+
+in that file
+
+Sincerely
+Rupesh
+
+On Tue, Apr 19, 2022 at 2:26 PM Mariana Khachatryan <marianak@jlab.org> wrote:
+Hi Rupesh,
+
+can you put here the path for your DSelector codes that you use in etaprime pi0 analysis to apply the cuts on the
+data that you later do q_factor separation for?
+
+Are the following steps for your analysis correct?
+1. Process data through your Dselector code
+2. Process through “produce_kintree_for_PWA.py" to calculate the q_factors and apply 2pi0 cut and save the data to kin tree.
+3. Where do you apply unique combo selection cut?
+
+
+Thank you,
+Mariana.
+
+
+
+
+
+
+
+
+
+
+
+
+
+To make a new DSelector analysis code do the steps below:
+
+MakeDSelector /work/halld/Mariana/PWA_challenge/Pol_beam_moment_accept/eta_pi0_posMepsilon_SD/gen/data_trees/tree_pi0eta__pi0_gg__eta_gg_gen_amp_031057_130.root pi0eta__pi0_gg__eta_gg_Tree  Moment_accept_data
+
+
+
+To run existing DSelector code:
+
+marianak@ifarm1901.jlab.org> root -l -b /work/halld/Mariana/PWA_challenge/Pol_beam_moment_accept/eta_pi0_posMepsilon_SD/gen/data_trees/tree_pi0eta__pi0_gg__eta_gg_gen_amp_031057_130.root
+root [0] 
+Attaching file /work/halld/Mariana/PWA_challenge/Pol_beam_moment_accept/eta_pi0_posMepsilon_SD/gen/data_trees/tree_pi0eta__pi0_gg__eta_gg_gen_amp_031057_130.root as _file0...
+(TFile *) 0x307bf60
+root [1] .x $ROOT_ANALYSIS_HOME/scripts/Load_DSelector.C
+root [2] 
+root [2] TTree* locTree=(TTree*)gDirectory->Get("pi0eta__pi0_gg__eta_gg_Tree")
+(TTree *) 0x37dbbc0
+root [3] locTree->Process("DSelector_Moment_accept_data.C+")
+
+
+
+
+
+ Run PROOF-Lite on a single file:
+
+marianak@ifarm1901.jlab.org> root -l
+root [0] .x $ROOT_ANALYSIS_HOME/scripts/Load_DSelector.C
+root [1] DPROOFLiteManager::Process_Tree("/work/halld/Mariana/PWA_challenge/Pol_beam_moment_accept/eta_pi0_posMepsilon_SD/gen/data_trees/tree_pi0eta__pi0_gg__eta_gg_gen_amp_031057_130.root","pi0eta__pi0_gg__eta_gg_Tree","DSelector_Moment_accept_data.C+",13)
+
+
+ Run PROOF-Lite on a many files file:
+
+Exe_DSelector_Moment_accept_data.csh
+
+
+
+
+Data Sets:
+
+GlueX Phase-I (Spring 2017, Spring 2018 and Fall 2018)
+• 𝜋 0 and 𝜂 masses constrained during kinfit
+• Locations for most recent:
+Spring17 : /mss/halld/RunPeriod-2017-01/analysis/ver50/tree_pi0etapr__B4_M35/merged/ (338 runs)
+Spring18 : /mss/halld/RunPeriod-2018-01/analysis/ver02/tree_pi0etapr__B4_M35/merged/  (548 runs)
+Fall18 :  /mss/halld/RunPeriod-2018-08/analysis/ver02/tree_pi0etapr__B4_M35/merged/ (450 runs)
+
+
+
